@@ -1,0 +1,35 @@
+#ifndef __YLOG_H__
+#define __YLOG_H__
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+typedef void (*ylog_callback_t)(const char *msg);
+
+typedef struct ylog_s ylog_t;
+
+
+ylog_t *ylog_open(int level, int position, ylog_callback_t cb);
+
+/* not thread safe */
+void ylog_close(ylog_t *ylog);
+
+/* do not use directly */
+void ylog_log(ylog_t *ylog, int level, const char *file, int line, const char *func, const char *fmt, ...);
+
+#define ylog_info(ylog, fmt, ...) \
+        ylog_log(ylog, 0, __FILE__, __LINE__, __FUNCTION__, fmt, ##__VA_ARGS__)
+
+#define ylog_debug(ylog, fmt, ...) \
+        ylog_log(ylog, 1, __FILE__, __LINE__, __FUNCTION__, fmt, ##__VA_ARGS__)
+
+
+#ifdef __cplusplus
+}
+#endif  /* __cplusplus */
+
+
+#endif  /* __YLOG_H__ */
