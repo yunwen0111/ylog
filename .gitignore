@@ -1,0 +1,10 @@
+# commonly used editors
+# vim
+*.swp
+tags
+
+# generated files etc
+*.[oa]
+*.l[oa]
+*.so
+*.dll
