@@ -15,9 +15,12 @@ typedef HANDLE mutex_handle_t;
 #define MUTEX_UNLOCK(handle) ReleaseMutex(handle)
 #define MUTEX_DESTROY(handle) CloseHandle(handle)
 
+#define GetTimeMS() (uint64_t)timeGetTime()
+
 #else /* Use pthread library */
 
 #include <pthread.h>
+#include <sys/time.h>
 
 typedef pthread_mutex_t mutex_handle_t;
 
@@ -26,24 +29,37 @@ typedef pthread_mutex_t mutex_handle_t;
 #define MUTEX_UNLOCK(handle) pthread_mutex_unlock(&(handle))
 #define MUTEX_DESTROY(handle) pthread_mutex_destroy(&(handle))
 
+static inline uint64_t GetTimeMS() {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (uint64_t)(tv.tv_sec * 1000 + tv.tv_usec / 1000);
+}
+
 #endif
 
 
 struct ylog_s {
     int level;
-    int position;
+    bool position;
+    bool timer;
     ylog_callback_t cb;
 
+    uint64_t start_millisecond;
     mutex_handle_t cb_mutex;
 };
 
 
-extern "C" ylog_t *ylog_open(int level, int position, ylog_callback_t cb)
+extern "C" ylog_t *ylog_open(int level, int position, int timer, ylog_callback_t cb)
 {
+    if (!cb)
+        return NULL;
+
     ylog_t *ylog = (ylog_t *)malloc(sizeof(ylog_t));
     ylog->level = level;
-    ylog->position = position;
+    ylog->position = (position != 0);
+    ylog->timer = (timer != 0);
     ylog->cb = cb;
+    ylog->start_millisecond = GetTimeMS();
     MUTEX_CREATE(ylog->cb_mutex);
 
     return ylog;
@@ -77,8 +93,7 @@ extern "C" void ylog_log(ylog_t *ylog, int level, const char *file, int line, co
     if (ylog->position)
         snprintf(buf + offset, 128, "[...%s:%d|%s]", file, line, func);
 
-    if (ylog->cb)
-        ylog->cb(buf);
+    ylog->cb(ylog->timer ? GetTimeMS() - ylog->start_millisecond : 0, buf);
 
     MUTEX_UNLOCK(ylog->cb_mutex);
 }

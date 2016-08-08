@@ -7,12 +7,15 @@ extern "C" {
 #endif
 
 
-typedef void (*ylog_callback_t)(const char *msg);
+#include <stdint.h>
+
+
+typedef void (*ylog_callback_t)(uint64_t millisecond, const char *msg);
 
 typedef struct ylog_s ylog_t;
 
 
-ylog_t *ylog_open(int level, int position, ylog_callback_t cb);
+ylog_t *ylog_open(int level, int position, int timer, ylog_callback_t cb);
 
 void ylog_close(ylog_t *ylog);
 
