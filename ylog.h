@@ -14,7 +14,6 @@ typedef struct ylog_s ylog_t;
 
 ylog_t *ylog_open(int level, int position, ylog_callback_t cb);
 
-/* not thread safe */
 void ylog_close(ylog_t *ylog);
 
 /* do not use directly */
