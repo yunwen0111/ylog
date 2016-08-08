@@ -1,6 +1,7 @@
 #include "ylog.h"
 
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
 
@@ -39,6 +40,7 @@ static inline uint64_t GetTimeMS() {
 
 
 struct ylog_s {
+    char *caller;
     int level;
     bool position;
     bool timer;
@@ -49,12 +51,14 @@ struct ylog_s {
 };
 
 
-extern "C" ylog_t *ylog_open(int level, int position, int timer, ylog_callback_t cb)
+extern "C" ylog_t *ylog_open(const char *caller, int level, int position, int timer, ylog_callback_t cb)
 {
     if (!cb)
         return NULL;
 
     ylog_t *ylog = (ylog_t *)malloc(sizeof(ylog_t));
+    ylog->caller = (char *)malloc(strlen(caller)+1);
+    strcpy(ylog->caller, caller);
     ylog->level = level;
     ylog->position = (position != 0);
     ylog->timer = (timer != 0);
@@ -69,6 +73,7 @@ extern "C" ylog_t *ylog_open(int level, int position, int timer, ylog_callback_t
 extern "C" void ylog_close(ylog_t *ylog)
 {
     MUTEX_DESTROY(ylog->cb_mutex);
+    free(ylog->caller);
     free(ylog);
 }
 
@@ -93,7 +98,8 @@ extern "C" void ylog_log(ylog_t *ylog, int level, const char *file, int line, co
     if (ylog->position)
         snprintf(buf + offset, 128, "[...%s:%d|%s]", file, line, func);
 
-    ylog->cb(ylog->timer ? GetTimeMS() - ylog->start_millisecond : 0, buf);
+    ylog->cb(ylog->caller,
+            ylog->timer ? GetTimeMS()-ylog->start_millisecond : 0, buf);
 
     MUTEX_UNLOCK(ylog->cb_mutex);
 }

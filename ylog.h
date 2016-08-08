@@ -10,12 +10,12 @@ extern "C" {
 #include <stdint.h>
 
 
-typedef void (*ylog_callback_t)(uint64_t millisecond, const char *msg);
+typedef void (*ylog_callback_t)(const char *caller, uint64_t millisecond, const char *msg);
 
 typedef struct ylog_s ylog_t;
 
 
-ylog_t *ylog_open(int level, int position, int timer, ylog_callback_t cb);
+ylog_t *ylog_open(const char *caller, int level, int position, int timer, ylog_callback_t cb);
 
 void ylog_close(ylog_t *ylog);
 
