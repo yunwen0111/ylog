@@ -96,7 +96,7 @@ extern "C" void ylog_log(ylog_t *ylog, int level, const char *file, int line, co
     va_end(ap);
 
     if (ylog->position)
-        snprintf(buf + offset, 128, "[...%s:%d|%s]", file, line, func);
+        snprintf(buf + offset, 128, "|  ..[%s:%d,%s]\n", file, line, func);
 
     ylog->cb(ylog->caller,
             ylog->timer ? GetTimeMS()-ylog->start_millisecond : 0, buf);
