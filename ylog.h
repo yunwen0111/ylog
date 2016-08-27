@@ -20,8 +20,9 @@ typedef struct ylog_s ylog_t;
  * \param level     -1: output no log; 0: output info; 1: output all.
  * \param position  Output code position or not.
  * \param timer     Output millisecond or not.
+ * \param fold      Fold repeat logs or not.
  */
-ylog_t *ylog_open(const char *caller, int level, int position, int timer, ylog_callback_t cb);
+ylog_t *ylog_open(const char *caller, int level, int position, int timer, int fold, ylog_callback_t cb);
 
 void ylog_close(ylog_t *ylog);
 

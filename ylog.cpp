@@ -38,20 +38,26 @@ static inline uint64_t GetTimeMS() {
 
 #endif
 
+#define BUF_LEN  4096
+
 
 struct ylog_s {
     char *caller;
     int level;
     bool position;
     bool timer;
+    bool fold;
     ylog_callback_t cb;
 
     uint64_t start_millisecond;
     mutex_handle_t cb_mutex;
+
+    char *cache;
+    int repeat_counter;
 };
 
 
-extern "C" ylog_t *ylog_open(const char *caller, int level, int position, int timer, ylog_callback_t cb)
+extern "C" ylog_t *ylog_open(const char *caller, int level, int position, int timer, int fold, ylog_callback_t cb)
 {
     if (!cb)
         return NULL;
@@ -62,9 +68,15 @@ extern "C" ylog_t *ylog_open(const char *caller, int level, int position, int ti
     ylog->level = level;
     ylog->position = (position != 0);
     ylog->timer = (timer != 0);
+    ylog->fold = (fold != 0);
     ylog->cb = cb;
+
     ylog->start_millisecond = GetTimeMS();
     MUTEX_CREATE(ylog->cb_mutex);
+
+    ylog->cache = (char *)malloc(BUF_LEN);
+    ylog->cache[0] = '\0';
+    ylog->repeat_counter = 0;
 
     return ylog;
 }
@@ -72,8 +84,20 @@ extern "C" ylog_t *ylog_open(const char *caller, int level, int position, int ti
 
 extern "C" void ylog_close(ylog_t *ylog)
 {
+    MUTEX_LOCK(ylog->cb_mutex);
+    if (ylog->repeat_counter > 0) {
+        char buf_repeat[64];
+        snprintf(buf_repeat, sizeof(buf_repeat), "<repeat %d times>\n",
+                ylog->repeat_counter + 1);
+        ylog->cb(ylog->caller,
+                ylog->timer ? GetTimeMS()-ylog->start_millisecond : 0,
+                buf_repeat);
+    }
+    MUTEX_UNLOCK(ylog->cb_mutex);
+
     MUTEX_DESTROY(ylog->cb_mutex);
     free(ylog->caller);
+    free(ylog->cache);
     free(ylog);
 }
 
@@ -87,7 +111,7 @@ extern "C" void ylog_log(ylog_t *ylog, int level, const char *file, int line, co
         return;
     }
 
-    char buf[4096];
+    char buf[BUF_LEN];
     buf[sizeof(buf)-1] = '\0';
 
     va_list ap;
@@ -97,9 +121,32 @@ extern "C" void ylog_log(ylog_t *ylog, int level, const char *file, int line, co
 
     if (ylog->position)
         snprintf(buf + offset, 128, "|  ..[%s:%d,%s]\n", file, line, func);
+    else
+        snprintf(buf + offset, 128, "\n");
 
-    ylog->cb(ylog->caller,
-            ylog->timer ? GetTimeMS()-ylog->start_millisecond : 0, buf);
+    if (ylog->fold) {
+        if (!strncmp(buf, ylog->cache, BUF_LEN)) {
+            ylog->repeat_counter++;
+        }
+        else {
+            if (ylog->repeat_counter > 0) {
+                char buf_repeat[64];
+                snprintf(buf_repeat, sizeof(buf_repeat), "<repeat %d times>\n",
+                        ylog->repeat_counter + 1);
+                ylog->cb(ylog->caller,
+                        ylog->timer ? GetTimeMS()-ylog->start_millisecond : 0,
+                        buf_repeat);
+            }
+            ylog->cb(ylog->caller,
+                    ylog->timer ? GetTimeMS()-ylog->start_millisecond : 0, buf);
+            strcpy(ylog->cache, buf);
+            ylog->repeat_counter = 0;
+        }
+    }
+    else {
+        ylog->cb(ylog->caller,
+                ylog->timer ? GetTimeMS()-ylog->start_millisecond : 0, buf);
+    }
 
     MUTEX_UNLOCK(ylog->cb_mutex);
 }
