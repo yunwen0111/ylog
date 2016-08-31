@@ -17,7 +17,7 @@ typedef struct ylog_s ylog_t;
 
 /**
  * \param caller    Pointer to buffer of caller name.
- * \param level     -1: output no log; 0: output info; 1: output all.
+ * \param level     -1: no log; 0: output error; 1: output error and info; 2: output all.
  * \param position  Output code position or not.
  * \param timer     Output millisecond or not.
  * \param fold      Fold repeat logs or not.
@@ -29,11 +29,14 @@ void ylog_close(ylog_t *ylog);
 /* do not use directly */
 void ylog_log(ylog_t *ylog, int level, const char *file, int line, const char *func, const char *fmt, ...);
 
-#define ylog_info(ylog, fmt, ...) \
+#define ylog_error(ylog, fmt, ...) \
         ylog_log(ylog, 0, __FILE__, __LINE__, __FUNCTION__, fmt, ##__VA_ARGS__)
 
-#define ylog_debug(ylog, fmt, ...) \
+#define ylog_info(ylog, fmt, ...) \
         ylog_log(ylog, 1, __FILE__, __LINE__, __FUNCTION__, fmt, ##__VA_ARGS__)
+
+#define ylog_debug(ylog, fmt, ...) \
+        ylog_log(ylog, 2, __FILE__, __LINE__, __FUNCTION__, fmt, ##__VA_ARGS__)
 
 
 #ifdef __cplusplus
