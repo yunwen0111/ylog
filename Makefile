@@ -7,8 +7,14 @@ else
     BIN_DIR = $(prefix)/lib
 endif
 
+ifeq ($(build),)
+    BUILD_DIR = $(shell pwd)
+else
+    BUILD_DIR = $(build)/ylog
+endif
 
-OBJS = ylog.o
+
+OBJS = $(BUILD_DIR)/ylog.o
 
 LIB = $(BIN_DIR)/libylog.a
 
@@ -17,14 +23,12 @@ all: $(LIB)
 
 $(LIB): $(OBJS)
 	@$(MKDIR) $(BIN_DIR)
-	@echo -e "\033[31m  AR	$(LIB)  <<== [ $(OBJS) ]\033[00m"\
-                &&  $(AR) rcs $(LIB) $(OBJS)
-	@echo -e "\033[34m  AR $(LIB) Success.\033[00m"
+	@$(AR) rcs $(LIB) $(OBJS)  && echo -e "  AR	$(LIB) Success."
 
-%.o: %.cpp
-	@echo -e "\033[31m  CXX	$<\033[00m"  &&  $(CXX) -c $(CXXFLAGS) $< -o $@
+$(BUILD_DIR)/%.o: %.cpp
+	@$(MKDIR) $(BUILD_DIR)
+	@echo -e "  CXX		$<"  &&  $(CXX) -c $(CXXFLAGS) $< -o $@
 
 .PHONY: clean
 clean:
-	@echo -e "\033[31m  RM	$(LIB) $(OBJS)\033[00m"\
-                &&  $(RM) $(LIB) $(OBJS)
+	@echo -e "  Clean		ylog"  &&  $(RM) $(LIB) $(OBJS)
