@@ -10,19 +10,19 @@ extern "C" {
 #include <stdint.h>
 
 
-typedef void (*ylog_callback_t)(const char *caller, uint64_t millisecond, const char *msg);
+typedef void (*ylog_callback_t)(void *caller, uint64_t millisecond, const char *msg);
 
 typedef struct ylog_s ylog_t;
 
 
 /**
- * \param caller    Pointer to buffer of caller name.
+ * \param caller    Pointer to caller data.
  * \param level     -1: no log; 0: output error; 1: output error and info; 2: output all.
  * \param position  Output code position or not.
  * \param timer     Output millisecond or not.
  * \param fold      Fold repeat logs or not.
  */
-ylog_t *ylog_open(const char *caller, int level, int position, int timer, int fold, ylog_callback_t cb);
+ylog_t *ylog_open(void *caller, int level, int position, int timer, int fold, ylog_callback_t cb);
 
 void ylog_close(ylog_t *ylog);
 

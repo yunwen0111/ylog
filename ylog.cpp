@@ -42,7 +42,7 @@ static inline uint64_t GetTimeMS() {
 
 
 struct ylog_s {
-    char *caller;
+    void *caller;
     int level;
     bool position;
     bool timer;
@@ -57,14 +57,13 @@ struct ylog_s {
 };
 
 
-extern "C" ylog_t *ylog_open(const char *caller, int level, int position, int timer, int fold, ylog_callback_t cb)
+extern "C" ylog_t *ylog_open(void *caller, int level, int position, int timer, int fold, ylog_callback_t cb)
 {
     if (!cb)
         return NULL;
 
     ylog_t *ylog = (ylog_t *)malloc(sizeof(ylog_t));
-    ylog->caller = (char *)malloc(strlen(caller)+1);
-    strcpy(ylog->caller, caller);
+    ylog->caller = caller;
     ylog->level = level;
     ylog->position = (position != 0);
     ylog->timer = (timer != 0);
@@ -96,7 +95,6 @@ extern "C" void ylog_close(ylog_t *ylog)
     MUTEX_UNLOCK(ylog->cb_mutex);
 
     MUTEX_DESTROY(ylog->cb_mutex);
-    free(ylog->caller);
     free(ylog->cache);
     free(ylog);
 }
