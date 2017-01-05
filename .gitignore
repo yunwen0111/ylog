@@ -8,3 +8,5 @@ tags
 *.l[oa]
 *.so
 *.dll
+*.d
+*.d.*

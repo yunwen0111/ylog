@@ -8,13 +8,15 @@ else
 endif
 
 ifeq ($(build),)
-    BUILD_DIR = $(shell pwd)
+    BUILD_DIR = $(shell pwd)/build
 else
     BUILD_DIR = $(build)/ylog
 endif
 
+vpath %.o $(BUILD_DIR)
 
-OBJS = $(BUILD_DIR)/ylog.o
+
+OBJS = ylog.o
 
 LIB = $(BIN_DIR)/libylog.a
 
@@ -23,12 +25,20 @@ all: $(LIB)
 
 $(LIB): $(OBJS)
 	@$(MKDIR) $(BIN_DIR)
-	@$(AR) rcs $(LIB) $(OBJS)  && echo -e "  AR	$(LIB) Success."
+	@cd $(BUILD_DIR)  &&  $(AR) rcs $(LIB) $(OBJS)  && echo -e "  AR	$(LIB) Success."
 
-$(BUILD_DIR)/%.o: %.cpp
+%.o: %.cpp
 	@$(MKDIR) $(BUILD_DIR)
-	@echo -e "  CXX		$<"  &&  $(CXX) -c $(CXXFLAGS) $< -o $@
+	@echo -e "  CXX		$<"  &&  $(CXX) -c $(CXXFLAGS) $< -o $(BUILD_DIR)/$@
+
+%.d: %.cpp
+	@set -e; $(RM) $@; $(CXX) -MM $< $(CXXFLAGS) > $@.$$$$; \
+	    sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
+	    $(RM) $@.$$$$
+
+-include $(OBJS:.o=.d)
+
 
 .PHONY: clean
 clean:
-	@echo -e "  Clean		ylog"  &&  $(RM) $(LIB) $(OBJS)
+	@echo -e "  Clean		ylog"  &&  $(RM) $(LIB) $(BUILD_DIR) *.d *.d.*
