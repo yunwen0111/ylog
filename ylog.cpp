@@ -113,27 +113,31 @@ extern "C" void ylog_log(ylog_t *ylog, int level, const char *file, int line, co
     buf[sizeof(buf)-1] = '\0';
     switch(level) {
         case 0:
-            strcpy(buf, "[ERROR]");
+            strcpy(buf, "[ERROR] ");
             break;
         case 1:
-            strcpy(buf, "[ INFO]");
+            strcpy(buf, "[ INFO] ");
             break;
         case 2:
-            strcpy(buf, "[DEBUG]");
+            strcpy(buf, "[DEBUG] ");
             break;
         default:
             break;
     }
 
+    const int level_str_len = 8;
+
     va_list ap;
     va_start(ap, fmt);
-    int offset = vsnprintf(buf+7, sizeof(buf)-129-7, fmt, ap);
+    int offset = vsnprintf(buf + level_str_len,
+            sizeof(buf) - 129- level_str_len, fmt, ap);
     va_end(ap);
 
     if (ylog->position)
-        snprintf(buf + 7 + offset, 128, "|  ..[%s:%d,%s]\n", file, line, func);
+        snprintf(buf + level_str_len + offset, 128, "|  ..[%s:%d,%s]\n", file,
+                line, func);
     else
-        snprintf(buf + 7 + offset, 128, "\n");
+        snprintf(buf + level_str_len + offset, 128, "\n");
 
     if (ylog->fold) {
         if (!strncmp(buf, ylog->cache, BUF_LEN)) {
