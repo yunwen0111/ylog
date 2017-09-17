@@ -88,7 +88,7 @@ extern "C" void ylog_close(ylog_t *ylog)
         char buf_repeat[64];
         snprintf(buf_repeat, sizeof(buf_repeat), "<repeat %d times>\n",
                 ylog->repeat_counter + 1);
-        ylog->cb(ylog->caller,
+        ylog->cb(ylog->caller, ylog->start_millisecond,
                 ylog->timer ? GetTimeMS()-ylog->start_millisecond : 0,
                 buf_repeat);
     }
@@ -148,18 +148,18 @@ extern "C" void ylog_log(ylog_t *ylog, int level, const char *file, int line, co
                 char buf_repeat[64];
                 snprintf(buf_repeat, sizeof(buf_repeat), "<repeat %d times>\n",
                         ylog->repeat_counter + 1);
-                ylog->cb(ylog->caller,
+                ylog->cb(ylog->caller, ylog->start_millisecond,
                         ylog->timer ? GetTimeMS()-ylog->start_millisecond : 0,
                         buf_repeat);
             }
-            ylog->cb(ylog->caller,
+            ylog->cb(ylog->caller, ylog->start_millisecond,
                     ylog->timer ? GetTimeMS()-ylog->start_millisecond : 0, buf);
             strcpy(ylog->cache, buf);
             ylog->repeat_counter = 0;
         }
     }
     else {
-        ylog->cb(ylog->caller,
+        ylog->cb(ylog->caller, ylog->start_millisecond,
                 ylog->timer ? GetTimeMS()-ylog->start_millisecond : 0, buf);
     }
 

@@ -10,7 +10,7 @@ extern "C" {
 #include <stdint.h>
 
 
-typedef void (*ylog_callback_t)(void *caller, uint64_t millisecond, const char *msg);
+typedef void (*ylog_callback_t)(void *caller, uint64_t millisecond_start, uint64_t millisecond, const char *msg);
 
 typedef struct ylog_s ylog_t;
 
