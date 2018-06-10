@@ -1,6 +1,9 @@
 include env.mk
 
 
+MODULE_NAME = ylog
+
+
 ifeq ($(prefix),)
     BIN_DIR = $(shell pwd)
 else
@@ -10,7 +13,7 @@ endif
 ifeq ($(build),)
     BUILD_DIR = $(shell pwd)/build
 else
-    BUILD_DIR = $(build)/ylog
+    BUILD_DIR = $(build)/$(MODULE_NAME)
 endif
 
 vpath %.o $(BUILD_DIR)
@@ -18,7 +21,7 @@ vpath %.o $(BUILD_DIR)
 
 OBJS = ylog.o
 
-LIB = $(BIN_DIR)/libylog.a
+LIB = $(BIN_DIR)/lib$(MODULE_NAME).a
 
 .PHONY: all
 all: $(LIB)
@@ -41,4 +44,4 @@ $(LIB): $(OBJS)
 
 .PHONY: clean
 clean:
-	@echo -e "  Clean		ylog"  &&  $(RM) $(LIB) $(BUILD_DIR) *.d *.d.*
+	@echo -e "  Clean		$(MODULE_NAME)"  &&  $(RM) $(LIB) $(BUILD_DIR) *.d *.d.*

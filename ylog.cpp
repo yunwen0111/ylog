@@ -57,7 +57,7 @@ struct ylog_s {
 };
 
 
-extern "C" ylog_t *ylog_open(void *caller, int level, int position, int timer, int fold, ylog_callback_t cb)
+extern "C" ylog_t *ylog_open(void *caller, ylog_output_level_t level, ylog_output_position_t pos, ylog_output_time_t timer, ylog_output_fold_t fold, ylog_callback_t cb)
 {
     if (!cb)
         return NULL;
@@ -65,7 +65,7 @@ extern "C" ylog_t *ylog_open(void *caller, int level, int position, int timer, i
     ylog_t *ylog = (ylog_t *)malloc(sizeof(ylog_t));
     ylog->caller = caller;
     ylog->level = level;
-    ylog->position = (position != 0);
+    ylog->position = (pos != 0);
     ylog->timer = (timer != 0);
     ylog->fold = (fold != 0);
     ylog->cb = cb;
@@ -100,7 +100,7 @@ extern "C" void ylog_close(ylog_t *ylog)
 }
 
 
-extern "C" void ylog_log(ylog_t *ylog, int level, const char *file, int line, const char *func, const char *fmt, ...)
+extern "C" void ylog_log(ylog_t *ylog, ylog_output_level_t level, const char *file, int line, const char *func, const char *fmt, ...)
 {
     MUTEX_LOCK(ylog->cb_mutex);
 
