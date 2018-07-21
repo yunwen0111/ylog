@@ -52,6 +52,7 @@ struct ylog_s {
     uint64_t start_millisecond;
     mutex_handle_t cb_mutex;
 
+    char *buf;
     char *cache;
     int repeat_counter;
 };
@@ -73,8 +74,8 @@ extern "C" ylog_t *ylog_open(void *caller, ylog_output_level_t level, ylog_outpu
     ylog->start_millisecond = GetTimeMS();
     MUTEX_CREATE(ylog->cb_mutex);
 
-    ylog->cache = (char *)malloc(BUF_LEN);
-    ylog->cache[0] = '\0';
+    ylog->buf = (char *)calloc(1, BUF_LEN);
+    ylog->cache = (char *)calloc(1, BUF_LEN);
     ylog->repeat_counter = 0;
 
     return ylog;
@@ -95,6 +96,7 @@ extern "C" void ylog_close(ylog_t *ylog)
     MUTEX_UNLOCK(ylog->cb_mutex);
 
     MUTEX_DESTROY(ylog->cb_mutex);
+    free(ylog->buf);
     free(ylog->cache);
     free(ylog);
 }
@@ -109,17 +111,16 @@ extern "C" void ylog_log(ylog_t *ylog, ylog_output_level_t level, const char *fi
         return;
     }
 
-    char buf[BUF_LEN];
-    buf[sizeof(buf)-1] = '\0';
+    ylog->buf[BUF_LEN-1] = '\0';
     switch(level) {
         case 0:
-            strcpy(buf, "[ERROR] ");
+            strcpy(ylog->buf, "[ERROR] ");
             break;
         case 1:
-            strcpy(buf, "[ INFO] ");
+            strcpy(ylog->buf, "[ INFO] ");
             break;
         case 2:
-            strcpy(buf, "[DEBUG] ");
+            strcpy(ylog->buf, "[DEBUG] ");
             break;
         default:
             break;
@@ -129,18 +130,18 @@ extern "C" void ylog_log(ylog_t *ylog, ylog_output_level_t level, const char *fi
 
     va_list ap;
     va_start(ap, fmt);
-    int offset = vsnprintf(buf + level_str_len,
-            sizeof(buf) - 129- level_str_len, fmt, ap);
+    int offset = vsnprintf(ylog->buf + level_str_len,
+            BUF_LEN - 129- level_str_len, fmt, ap);
     va_end(ap);
 
     if (ylog->position)
-        snprintf(buf + level_str_len + offset, 128, "|  ..[%s:%d,%s]\n", file,
-                line, func);
+        snprintf(ylog->buf + level_str_len + offset, 128,
+                "|  ..[%s:%d,%s]\n", file, line, func);
     else
-        snprintf(buf + level_str_len + offset, 128, "\n");
+        snprintf(ylog->buf + level_str_len + offset, 128, "\n");
 
     if (ylog->fold) {
-        if (!strncmp(buf, ylog->cache, BUF_LEN)) {
+        if (!strncmp(ylog->buf, ylog->cache, BUF_LEN)) {
             ylog->repeat_counter++;
         }
         else {
@@ -153,14 +154,16 @@ extern "C" void ylog_log(ylog_t *ylog, ylog_output_level_t level, const char *fi
                         buf_repeat);
             }
             ylog->cb(ylog->caller, ylog->start_millisecond,
-                    ylog->timer ? GetTimeMS()-ylog->start_millisecond : 0, buf);
-            strcpy(ylog->cache, buf);
+                    ylog->timer ? GetTimeMS()-ylog->start_millisecond : 0,
+                    ylog->buf);
+            strcpy(ylog->cache, ylog->buf);
             ylog->repeat_counter = 0;
         }
     }
     else {
         ylog->cb(ylog->caller, ylog->start_millisecond,
-                ylog->timer ? GetTimeMS()-ylog->start_millisecond : 0, buf);
+                ylog->timer ? GetTimeMS()-ylog->start_millisecond : 0,
+                ylog->buf);
     }
 
     MUTEX_UNLOCK(ylog->cb_mutex);
