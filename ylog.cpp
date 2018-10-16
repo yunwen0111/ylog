@@ -55,7 +55,21 @@ struct ylog_s {
     char *buf;
     char *cache;
     int repeat_counter;
+    ylog_output_level_t repeat_level;
 };
+
+
+static void repeat_log_flush(ylog_t *ylog)
+{
+    if (ylog->repeat_counter > 0) {
+        char buf_repeat[64];
+        snprintf(buf_repeat, sizeof(buf_repeat), "<repeat %d times>\n",
+                ylog->repeat_counter + 1);
+        ylog->cb(ylog->caller, ylog->repeat_level, ylog->start_millisecond,
+                ylog->timer ? GetTimeMS()-ylog->start_millisecond : 0,
+                buf_repeat);
+    }
+}
 
 
 extern "C" ylog_t *ylog_open(void *caller, ylog_output_level_t level, ylog_output_position_t pos, ylog_output_time_t timer, ylog_output_fold_t fold, ylog_callback_t cb)
@@ -85,14 +99,7 @@ extern "C" ylog_t *ylog_open(void *caller, ylog_output_level_t level, ylog_outpu
 extern "C" void ylog_close(ylog_t *ylog)
 {
     MUTEX_LOCK(ylog->cb_mutex);
-    if (ylog->repeat_counter > 0) {
-        char buf_repeat[64];
-        snprintf(buf_repeat, sizeof(buf_repeat), "<repeat %d times>\n",
-                ylog->repeat_counter + 1);
-        ylog->cb(ylog->caller, ylog->start_millisecond,
-                ylog->timer ? GetTimeMS()-ylog->start_millisecond : 0,
-                buf_repeat);
-    }
+    repeat_log_flush(ylog);
     MUTEX_UNLOCK(ylog->cb_mutex);
 
     MUTEX_DESTROY(ylog->cb_mutex);
@@ -145,23 +152,17 @@ extern "C" void ylog_log(ylog_t *ylog, ylog_output_level_t level, const char *fi
             ylog->repeat_counter++;
         }
         else {
-            if (ylog->repeat_counter > 0) {
-                char buf_repeat[64];
-                snprintf(buf_repeat, sizeof(buf_repeat), "<repeat %d times>\n",
-                        ylog->repeat_counter + 1);
-                ylog->cb(ylog->caller, ylog->start_millisecond,
-                        ylog->timer ? GetTimeMS()-ylog->start_millisecond : 0,
-                        buf_repeat);
-            }
-            ylog->cb(ylog->caller, ylog->start_millisecond,
+            repeat_log_flush(ylog);
+            ylog->cb(ylog->caller, level, ylog->start_millisecond,
                     ylog->timer ? GetTimeMS()-ylog->start_millisecond : 0,
                     ylog->buf);
             strcpy(ylog->cache, ylog->buf);
             ylog->repeat_counter = 0;
+            ylog->repeat_level = level;
         }
     }
     else {
-        ylog->cb(ylog->caller, ylog->start_millisecond,
+        ylog->cb(ylog->caller, level, ylog->start_millisecond,
                 ylog->timer ? GetTimeMS()-ylog->start_millisecond : 0,
                 ylog->buf);
     }

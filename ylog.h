@@ -36,7 +36,7 @@ typedef enum {
 } ylog_output_fold_t;
 
 
-typedef void (*ylog_callback_t)(void *caller, uint64_t millisecond_start, uint64_t millisecond, const char *msg);
+typedef void (*ylog_callback_t)(void *caller, ylog_output_level_t level, uint64_t millisecond_start, uint64_t millisecond, const char *msg);
 
 typedef struct ylog_s ylog_t;
 
